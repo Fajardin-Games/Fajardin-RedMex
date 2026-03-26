@@ -1,17 +1,89 @@
-# Fajardin-RedMex
-SylvaLink: Red mesh descentralizada que sustituye el internet tradicional mediante nodos repetidores en árboles. Sin Wi-Fi ni datos móviles, los mensajes viajan de nodo en nodo por radiofrecuencia. Un sistema donde la expansión de la señal digital exige la plantación de vida: más cobertura, más árboles. Soberanía digital y reforestación masiva.
+# Meshrabiya
 
-🌐 Conectividad Off-Grid y Descentralizada
-El objetivo principal es eliminar la brecha digital y la dependencia de las grandes infraestructuras de telecomunicaciones. La red utiliza tecnología de radio (como LoRa o FSK) para transmitir paquetes de datos entre nodos repetidores. Cada mensaje viaja de "salto en salto" hasta encontrar su destino final, garantizando privacidad y resistencia contra censura o caídas del servicio eléctrico/internet.
+Meshrabiya es una red mallada (mesh) para Android que funciona sobre WiFi. Permite a las aplicaciones comunicarse de forma transparente a través de múltiples saltos entre grupos WiFi Direct y/o Local Only Hotspot.
 
-🌳 El Árbol como Infraestructura
-A diferencia de las redes convencionales que dependen de torres de metal, este sistema se apoya en la naturaleza. Los nodos están diseñados para ser instalados en árboles o áreas de reforestación. El crecimiento de la red está intrínsecamente ligado a la siembra de vida: más árboles significan mayor cobertura y una señal más robusta.
+Cada dispositivo obtiene una dirección IP virtual (normalmente 169.254.x.y). La aplicación puede usar SocketFactory y DatagramSocket para enviar y recibir datos entre nodos como si estuvieran conectados directamente. Funciona con bibliotecas de red de nivel superior como OkHttp.
 
-🚀 Características Principales
-Zero Internet: Comunicación total sin datos móviles ni Wi-Fi.
+Se diseña para entornos donde varios dispositivos Android necesitan comunicarse sin un punto de acceso WiFi central, por ejemplo en escuelas, clínicas de salud sin infraestructura WiFi, caminatas al aire libre, etc. WiFi permite conexiones de alta velocidad y el enrutamiento por múltiples saltos aumenta la cantidad de dispositivos conectados.
 
-Topología de Árbol/Malla: Los nodos actúan como repetidores inteligentes que rutean el tráfico de forma óptima.
+Meshrabiya es de código abierto y no depende de servicios propietarios: funciona en Android Open Source Project y no requiere Google Play Services ni APIs cercanas.
 
-Bajo Consumo: Diseñado para funcionar con energía solar y baterías de larga duración.
+## Cómo funciona
 
-Impacto Ambiental Positivo: La infraestructura física de la red es, literalmente, un bosque en crecimiento.
+1. Un nodo crea un hotspot WiFi (WiFi Direct o Local Only Hotspot) y genera un "connect link" con SSID, contraseña, dirección de enlace y puerto de servicio.
+2. Otro nodo recibe el connect link (por QR u otro canal), se conecta al hotspot y envía un paquete UDP al nodo inicial para presentarse.
+3. Los nodos intercambian mensajes de origen con su IP virtual y connect link. Estos anuncios se propagan hasta un límite de saltos y permiten calcular la ruta siguiente hacia cada destino.
+4. Cada nodo puede operar un hotspot entrante y una conexión saliente como estación simultáneamente, según soporte de hardware y versión Android.
+
+### Modos de hotspot
+
+- WiFi Direct Group: la mayoría de dispositivos Android pueden crear un grupo y permanecer conectados a otra red. En este modo se usan direcciones IPv6 de enlace local para evitar conflictos y permitir el cálculo de dirección MAC.
+- Local Only Hotspot: disponible en Android 8+, con concurrencia AP/Station en Android 11+ (hardware requerido). Proporciona un rango de subred aleatorio para evitar conflictos.
+
+## Uso
+
+### Agregar la dependencia
+
+En settings.gradle incluir el repositorio que provea el paquete y en build.gradle:
+
+```
+implementation "com.example.Meshrabiya:lib-meshrabiya:0.1-snapshot"
+```
+
+### Crear el nodo virtual
+
+```kotlin
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "meshr_settings")
+
+val myNode = AndroidVirtualNode(
+    appContext = applicationContext,
+    dataStore = applicationContext.dataStore,
+)
+```
+
+### Iniciar hotspot y obtener connect link
+
+```kotlin
+myNode.setWifiHotspotEnabled(
+  enabled = true,
+  preferredBand = ConnectBand.BAND_5GHZ,
+)
+
+val connectLink = myNode.state.filter { it.connectUri != None }.first()
+```
+
+### Conectar desde otro nodo
+
+```kotlin
+val connectLink = ... // obtenido por QR u otro canal
+val connectConfig = MeshrabiyaConnectLink.parseUri(connectLink).hotspotConfig
+if (connectConfig != None) {
+  myNode.connectAsStation(connectConfig)
+}
+```
+
+### Intercambio de datos TCP
+
+Servidor:
+```kotlin
+val serverVirtualAddr: InetAddress = myNode.address
+val serverSocket = ServerSocket(port)
+```
+
+Cliente:
+```kotlin
+val socketFactory = myNode.socketFactory
+val clientSocket = socketFactory.createSocket(serverVirtualAddr, port)
+```
+
+### Intercambio de datos UDP
+
+```kotlin
+val datagramSocket = myNode.createBoundDatagramSocket(port)
+```
+
+El socket se puede usar con send/receive de forma normal, y el broadcast se envía a 255.255.255.255 en la red virtual.
+
+## Problemas conocidos
+
+En pruebas instrumentadas, cambie la configuración de depuración a "java only" para evitar problemas con el depurador de Android Studio.
