@@ -3,6 +3,7 @@ package com.ustadmobile.meshrabiya.testapp.screens
 import android.content.Intent
 import android.webkit.MimeTypeMap
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,14 +12,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import com.ustadmobile.meshrabiya.testapp.theme.MeshAmber
+import com.ustadmobile.meshrabiya.testapp.theme.MeshBackground
+import com.ustadmobile.meshrabiya.testapp.theme.MeshOnAmber
+import com.ustadmobile.meshrabiya.testapp.theme.MeshSurface
+import com.ustadmobile.meshrabiya.testapp.theme.MeshTeal
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -96,7 +106,7 @@ fun ReceiveScreen(
     }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize().background(MeshBackground)
     ) {
         items(
             items = uiState.incomingTransfers,
@@ -104,12 +114,15 @@ fun ReceiveScreen(
         ) { transfer ->
             ListItem(
                 modifier = Modifier
-                    .clickable {
-                        openTransfer(transfer)
-                    }
+                    .clickable { openTransfer(transfer) }
                     .fillMaxWidth(),
+                colors = ListItemDefaults.colors(
+                    containerColor = MeshSurface,
+                    headlineColor = MaterialTheme.colorScheme.onBackground,
+                    supportingColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
                 headlineContent = {
-                    Text(transfer.name)
+                    Text(transfer.name, style = MaterialTheme.typography.titleSmall)
                 },
                 supportingContent = {
                     Column {
@@ -117,7 +130,7 @@ fun ReceiveScreen(
                         Text(buildString {
                             append("${transfer.transferred} / ${transfer.size} bytes")
                             if(transfer.status == TestAppServer.Status.COMPLETED) {
-                                append(" @ ${transfer.size / transfer.transferTime}KB/s (${transfer.transferTime})ms")
+                                append(" @ ${transfer.size / transfer.transferTime}KB/s (${transfer.transferTime}ms)")
                             }
                         })
 
@@ -125,18 +138,19 @@ fun ReceiveScreen(
                             Row {
                                 OutlinedButton(
                                     modifier = Modifier.padding(start = 0.dp, top = 8.dp, bottom = 8.dp),
-                                    onClick = {
-                                        onClickAccept(transfer)
-                                    }
+                                    onClick = { onClickAccept(transfer) },
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MeshTeal),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, MeshTeal)
                                 ) {
                                     Text("Aceptar")
                                 }
-
                                 OutlinedButton(
                                     modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
-                                    onClick = {
-                                        onClickDecline(transfer)
-                                    }
+                                    onClick = { onClickDecline(transfer) },
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error)
                                 ) {
                                     Text("Rechazar")
                                 }
@@ -145,9 +159,10 @@ fun ReceiveScreen(
 
                         if(transfer.status == TestAppServer.Status.COMPLETED) {
                             OutlinedButton(
-                                onClick = {
-                                    openTransfer(transfer)
-                                }
+                                onClick = { openTransfer(transfer) },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MeshAmber),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MeshAmber)
                             ) {
                                 Text("Abrir")
                             }
@@ -156,14 +171,11 @@ fun ReceiveScreen(
                 },
                 trailingContent = {
                     if(transfer.status == TestAppServer.Status.COMPLETED) {
-                        IconButton(
-                            onClick = {
-                                onClickDelete(transfer)
-                            }
-                        ) {
+                        IconButton(onClick = { onClickDelete(transfer) }) {
                             Icon(
-                                imageVector  = Icons.Default.Delete,
+                                imageVector = Icons.Default.Delete,
                                 contentDescription = "Eliminar",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }

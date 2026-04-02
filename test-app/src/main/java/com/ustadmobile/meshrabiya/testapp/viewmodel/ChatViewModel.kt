@@ -1,5 +1,6 @@
 package com.ustadmobile.meshrabiya.testapp.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ustadmobile.meshrabiya.testapp.appstate.AppUiState
@@ -86,7 +87,18 @@ class ChatViewModel(
                 val addr = InetAddress.getByName(target)
                 testAppServer.sendTextMessage(addr, text)
             } catch (e: Exception) {
-                // Handle error
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun sendImage(imageUri: Uri) {
+        val target = _uiState.value.targetAddress ?: return
+        viewModelScope.launch {
+            try {
+                val addr = InetAddress.getByName(target)
+                testAppServer.sendImageMessage(addr, imageUri)
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
         }

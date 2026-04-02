@@ -110,7 +110,8 @@ class TestAppServer(
         val from: String, // IP address string
         val text: String,
         val target: String? = null, // IP address of recipient (for outgoing messages)
-        val time: Long = System.currentTimeMillis()
+        val time: Long = System.currentTimeMillis(),
+        val imageUri: String? = null, // local file path or content URI for images
     )
 
     private val _incomingMessages = MutableStateFlow(emptyList<IncomingMessage>())
@@ -176,11 +177,15 @@ class TestAppServer(
             }
 
             mLogger(Log.INFO, "$logPrefix Sending file for xfer #$xferId")
-            val response = newFixedLengthResponse(
-                Response.Status.OK, "application/octet-stream",
-                contentIn,
-                outgoingXfer.size.toLong()
-            )
+            val response = if (outgoingXfer.size > 0) {
+                newFixedLengthResponse(
+                    Response.Status.OK, "application/octet-stream",
+                    contentIn,
+                    outgoingXfer.size.toLong()
+                )
+            } else {
+                newChunkedResponse(Response.Status.OK, "application/octet-stream", contentIn)
+            }
 
             //Provide status updates by checking how many bytes have been read periodically
             scope.launch {
@@ -276,6 +281,45 @@ class TestAppServer(
             val fromVal = searchParams["from"]
 
             if(text != null && fromVal != null) {
+                // Mensaje especial de imagen: el sender indica qué transferencia es una imagen de chat
+                if (text.startsWith(CHAT_IMG_PREFIX)) {
+                    val transferId = text.removePrefix(CHAT_IMG_PREFIX).toIntOrNull()
+                    if (transferId != null) {
+                        scope.launch {
+                            // Wait up to 3s for the /send request to be processed first
+                            var transfer = _incomingTransfers.value.firstOrNull { it.id == transferId }
+                            var retries = 0
+                            while (transfer == null && retries < 6) {
+                                delay(500)
+                                transfer = _incomingTransfers.value.firstOrNull { it.id == transferId }
+                                retries++
+                            }
+                            if (transfer != null) {
+                                receiveDir.takeIf { !it.exists() }?.mkdirs()
+                                val destFile = File(receiveDir, transfer.name)
+                                acceptIncomingTransfer(transfer, destFile)
+                                if (destFile.exists() && destFile.length() > 0) {
+                                    val msg = IncomingMessage(
+                                        from = fromVal,
+                                        text = "",
+                                        imageUri = destFile.absolutePath
+                                    )
+                                    _incomingMessages.update { prev ->
+                                        buildList { add(msg); addAll(prev) }
+                                    }
+                                    saveChatHistory()
+                                    mLogger(Log.INFO, "$logPrefix Chat image saved from $fromVal: ${destFile.absolutePath}")
+                                } else {
+                                    mLogger(Log.WARN, "$logPrefix Chat image download failed from $fromVal (transferId=$transferId)")
+                                }
+                            } else {
+                                mLogger(Log.WARN, "$logPrefix Chat image transfer $transferId not found after retries")
+                            }
+                        }
+                    }
+                    return newFixedLengthResponse("OK")
+                }
+
                 val msg = IncomingMessage(
                     from = fromVal,
                     text = text,
@@ -408,7 +452,7 @@ class TestAppServer(
                     function = { item ->
                         item.copy(
                             transferTime = transferDurationMs,
-                            status = if(totalTransfered == fileSize) {
+                            status = if(fileSize <= 0 || totalTransfered == fileSize) {
                                  Status.COMPLETED
                             }else {
                                   Status.FAILED
@@ -531,6 +575,43 @@ class TestAppServer(
     }
 
 
+    suspend fun sendImageMessage(
+        toNode: InetAddress,
+        imageUri: Uri,
+        port: Int = DEFAULT_PORT,
+    ) {
+        withContext(Dispatchers.IO) {
+            // 1. Registra la transferencia saliente y notifica al receptor vía /send (mecanismo existente)
+            val transfer = addOutgoingTransfer(imageUri, toNode, port)
+
+            // 2. Envía mensaje especial para que el receptor auto-acepte y lo muestre en el chat
+            val encodedMsg = URLEncoder.encode("$CHAT_IMG_PREFIX${transfer.id}", "UTF-8")
+            val msgRequest = Request.Builder()
+                .url("http://${toNode.hostAddress}:$port/message?text=$encodedMsg&from=${localVirtualAddr.hostAddress}")
+                .build()
+
+            try {
+                httpClient.newCall(msgRequest).execute()
+
+                // 3. Agrega mensaje local para que el sender vea la imagen inmediatamente
+                val myMsg = IncomingMessage(
+                    from = "Me",
+                    text = "",
+                    target = toNode.hostAddress,
+                    imageUri = imageUri.toString()
+                )
+                _incomingMessages.update { prev ->
+                    buildList { add(myMsg); addAll(prev) }
+                }
+                saveChatHistory()
+                mLogger(Log.INFO, "$logPrefix sent chat image to $toNode (transferId=${transfer.id})")
+            } catch (e: Exception) {
+                mLogger(Log.ERROR, "$logPrefix failed to send chat image to $toNode", e)
+                throw e
+            }
+        }
+    }
+
     override fun close() {
         stop()
         scope.cancel()
@@ -539,6 +620,9 @@ class TestAppServer(
     companion object {
 
         const val DEFAULT_PORT = 4242
+
+        // Prefijo para mensajes internos de imagen en chat
+        const val CHAT_IMG_PREFIX = "__IMG__:"
 
     }
 

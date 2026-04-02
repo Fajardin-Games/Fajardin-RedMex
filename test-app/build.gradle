@@ -17,8 +17,8 @@ android {
         applicationId "com.ustadmobile.meshrabiya.testapp"
         minSdk 26
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "redmex 2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -57,6 +57,24 @@ android {
     }
 }
 
+// Copia el APK generado a /apps con nombre versionado para control en git
+android.applicationVariants.all { variant ->
+    variant.assembleProvider.get().doLast {
+        def appsDir = new File(rootProject.projectDir, "apps")
+        appsDir.mkdirs()
+        variant.outputs.all { output ->
+            def src = output.outputFile
+            def dst = new File(appsDir, "meshrabiya-${variant.versionName}-${variant.buildType.name}.apk")
+            copy {
+                from src
+                into appsDir
+                rename { dst.name }
+            }
+            println "APK copiado a: ${dst.absolutePath}"
+        }
+    }
+}
+
 dependencies {
 
     implementation project(':lib-meshrabiya')
@@ -90,6 +108,8 @@ dependencies {
     implementation "org.bouncycastle:bcprov-jdk18on:$version_bouncycastle"
     implementation "org.bouncycastle:bcpkix-jdk18on:$version_bouncycastle"
     implementation "com.google.accompanist:accompanist-webview:$version_compose_accompanist"
+    implementation "io.coil-kt:coil-compose:2.4.0"
+    implementation "androidx.compose.ui:ui-text-google-fonts:1.4.3"
 
     coreLibraryDesugaring "com.android.tools:desugar_jdk_libs_nio:$version_android_desugaring"
 

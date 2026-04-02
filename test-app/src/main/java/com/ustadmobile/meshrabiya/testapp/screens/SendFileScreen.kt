@@ -3,12 +3,19 @@ package com.ustadmobile.meshrabiya.testapp.screens
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import com.ustadmobile.meshrabiya.testapp.theme.MeshBackground
+import com.ustadmobile.meshrabiya.testapp.theme.MeshSurface
+import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -26,14 +33,19 @@ import org.kodein.di.compose.localDI
 fun SendFileScreen(
     uiState: SendFileUiState,
 ){
-    LazyColumn {
+    LazyColumn(modifier = Modifier.fillMaxSize().background(MeshBackground)) {
         items(
             items = uiState.pendingTransfers,
             key = { it.id }
-        ) {transfer ->
+        ) { transfer ->
             ListItem(
+                colors = ListItemDefaults.colors(
+                    containerColor = MeshSurface,
+                    headlineColor = MaterialTheme.colorScheme.onBackground,
+                    supportingColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
                 headlineContent = {
-                    Text("${transfer.name} -> ${transfer.toHost.hostAddress}")
+                    Text("${transfer.name} -> ${transfer.toHost.hostAddress}", style = MaterialTheme.typography.titleSmall)
                 },
                 supportingContent = {
                     Text("Estado: ${transfer.status} Enviado ${transfer.transferred} / ${transfer.size}")

@@ -21,8 +21,8 @@ fun ContentResolver.getUriNameAndSize(uri: Uri): UriNameAndSize {
             var nameIndex = 0
             var sizeIndex = 0
             if(cursor.moveToFirst() &&
-                cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME).also { nameIndex = it } >= 1 &&
-                cursor.getColumnIndex(OpenableColumns.SIZE).also { sizeIndex = it } >= 1
+                cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME).also { nameIndex = it } >= 0 &&
+                cursor.getColumnIndex(OpenableColumns.SIZE).also { sizeIndex = it } >= 0
             ) {
                 val size = if(cursor.isNull(sizeIndex)) { null } else {
                     cursor.getString(sizeIndex)

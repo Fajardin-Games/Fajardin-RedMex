@@ -1,20 +1,24 @@
 package com.ustadmobile.meshrabiya.testapp.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,6 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ustadmobile.meshrabiya.testapp.ViewModelFactory
 import com.ustadmobile.meshrabiya.testapp.appstate.AppUiState
+import com.ustadmobile.meshrabiya.testapp.theme.MeshAmber
+import com.ustadmobile.meshrabiya.testapp.theme.MeshBackground
+import com.ustadmobile.meshrabiya.testapp.theme.MeshOutline
 import com.ustadmobile.meshrabiya.testapp.viewmodel.ChatSummary
 import com.ustadmobile.meshrabiya.testapp.viewmodel.RecentChatsUiState
 import com.ustadmobile.meshrabiya.testapp.viewmodel.RecentChatsViewModel
@@ -63,14 +70,14 @@ fun RecentChatsScreen(
 private fun RecentChatsList(chats: List<ChatSummary>, onChatClick: (String) -> Unit) {
     if (chats.isEmpty()) {
         Column(
-                modifier = Modifier.fillMaxWidth().padding(32.dp),
+                modifier = Modifier.fillMaxSize().background(MeshBackground).padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
         ) { Text("No hay chats recientes.", style = MaterialTheme.typography.bodyLarge) }
     } else {
-        LazyColumn {
+        LazyColumn(modifier = Modifier.fillMaxSize().background(MeshBackground)) {
             items(chats, key = { it.ipAddress }) { chat ->
                 ChatItem(chat = chat, onClick = { onChatClick(chat.ipAddress) })
-                Divider()
+                Divider(color = MeshOutline, thickness = 0.5.dp)
             }
         }
     }
@@ -82,11 +89,15 @@ private fun ChatItem(chat: ChatSummary, onClick: () -> Unit) {
     val timeString = dateFormatter.format(Date(chat.timestamp))
 
     Row(
-            modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(16.dp),
+            modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MeshBackground)
+                    .clickable(onClick = onClick)
+                    .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
     ) {
-        androidx.compose.material3.Surface(
-                shape = androidx.compose.foundation.shape.CircleShape,
+        Surface(
+                shape = CircleShape,
                 color = MaterialTheme.colorScheme.secondaryContainer,
                 modifier = Modifier.padding(end = 16.dp)
         ) {
@@ -94,16 +105,17 @@ private fun ChatItem(chat: ChatSummary, onClick: () -> Unit) {
                     imageVector = Icons.Default.Person,
                     contentDescription = null,
                     modifier = Modifier.padding(12.dp).size(28.dp),
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                    tint = MaterialTheme.colorScheme.secondary
             )
         }
 
         Column(modifier = Modifier.weight(1f)) {
-            Row(modifier = Modifier.fillMaxWidth()) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                         text = chat.nickname ?: chat.ipAddress,
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.weight(1f)
                 )
                 Text(
@@ -115,12 +127,20 @@ private fun ChatItem(chat: ChatSummary, onClick: () -> Unit) {
             }
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                    text = chat.lastMessage,
+                    text = if (chat.lastMessage.isBlank()) "Sin mensajes" else chat.lastMessage,
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+
+        // Punto activo ámbar
+        Spacer(modifier = Modifier.size(8.dp))
+        Surface(
+                shape = CircleShape,
+                color = MeshAmber,
+                modifier = Modifier.size(8.dp)
+        ) {}
     }
 }

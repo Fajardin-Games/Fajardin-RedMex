@@ -17,13 +17,21 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import com.ustadmobile.meshrabiya.testapp.theme.MeshAmber
+import com.ustadmobile.meshrabiya.testapp.theme.MeshBackground
+import com.ustadmobile.meshrabiya.testapp.theme.MeshSurface
+import com.ustadmobile.meshrabiya.testapp.theme.MeshText
+import com.ustadmobile.meshrabiya.testapp.theme.MeshTextSecondary
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -80,7 +88,18 @@ fun MeshrabiyaTestApp(di: DI) =
                     snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
                     topBar = {
                         TopAppBar(
-                                title = { Text(appUiState.title) },
+                                title = {
+                                    Text(
+                                        appUiState.title,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = MeshAmber
+                                    )
+                                },
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = MeshBackground,
+                                    titleContentColor = MeshAmber,
+                                    actionIconContentColor = MeshText,
+                                ),
                                 actions = {
                                     if (appUiState.topBarActionIcon != null &&
                                                     appUiState.onTopBarActionClick != null
@@ -91,8 +110,8 @@ fun MeshrabiyaTestApp(di: DI) =
                                             Icon(
                                                     imageVector = appUiState.topBarActionIcon!!,
                                                     contentDescription =
-                                                            appUiState
-                                                                    .topBarActionContentDescription
+                                                            appUiState.topBarActionContentDescription,
+                                                    tint = MeshAmber
                                             )
                                         }
                                     }
@@ -113,71 +132,56 @@ fun MeshrabiyaTestApp(di: DI) =
                         }
                     },
                     bottomBar = {
-                        NavigationBar {
+                        NavigationBar(
+                            containerColor = MeshSurface,
+                            contentColor = MeshText,
+                        ) {
+                            val navItemColors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MeshAmber,
+                                selectedTextColor = MeshAmber,
+                                indicatorColor = MeshBackground,
+                                unselectedIconColor = MeshTextSecondary,
+                                unselectedTextColor = MeshTextSecondary,
+                            )
+
                             NavigationBarItem(
-                                    selected =
-                                            navController.currentDestination?.route ==
-                                                    "localvirtualnode",
+                                    selected = navController.currentDestination?.route == "localvirtualnode",
                                     label = { Text("Este Nodo") },
                                     onClick = { navController.navigate("localvirtualnode") },
-                                    icon = {
-                                        Icon(
-                                                imageVector = Icons.Default.PhoneAndroid,
-                                                contentDescription = null
-                                        )
-                                    }
+                                    colors = navItemColors,
+                                    icon = { Icon(imageVector = Icons.Default.PhoneAndroid, contentDescription = null) }
                             )
 
                             NavigationBarItem(
-                                    selected =
-                                            navController.currentDestination?.route ==
-                                                    "recentchats",
+                                    selected = navController.currentDestination?.route == "recentchats",
                                     label = { Text("Chats") },
                                     onClick = { navController.navigate("recentchats") },
-                                    icon = {
-                                        Icon(
-                                                imageVector = Icons.Default.ConnectWithoutContact,
-                                                contentDescription = null,
-                                        )
-                                    }
+                                    colors = navItemColors,
+                                    icon = { Icon(imageVector = Icons.Default.ConnectWithoutContact, contentDescription = null) }
                             )
 
                             NavigationBarItem(
-                                    selected =
-                                            navController.currentDestination?.route ==
-                                                    "neighbornodes",
+                                    selected = navController.currentDestination?.route == "neighbornodes",
                                     label = { Text("Vecinos") },
                                     onClick = { navController.navigate("neighbornodes") },
-                                    icon = {
-                                        Icon(
-                                                imageVector = Icons.Default.People,
-                                                contentDescription = null,
-                                        )
-                                    }
+                                    colors = navItemColors,
+                                    icon = { Icon(imageVector = Icons.Default.People, contentDescription = null) }
                             )
 
                             NavigationBarItem(
                                     selected = selectedItem == "send",
                                     label = { Text("Enviar") },
                                     onClick = { navController.navigate("send") },
-                                    icon = {
-                                        Icon(
-                                                imageVector = Icons.Default.UploadFile,
-                                                contentDescription = null,
-                                        )
-                                    }
+                                    colors = navItemColors,
+                                    icon = { Icon(imageVector = Icons.Default.UploadFile, contentDescription = null) }
                             )
 
                             NavigationBarItem(
                                     selected = selectedItem == "receive",
                                     label = { Text("Recibir") },
                                     onClick = { navController.navigate("receive") },
-                                    icon = {
-                                        Icon(
-                                                imageVector = Icons.Default.Download,
-                                                contentDescription = null,
-                                        )
-                                    }
+                                    colors = navItemColors,
+                                    icon = { Icon(imageVector = Icons.Default.Download, contentDescription = null) }
                             )
                         }
                     }

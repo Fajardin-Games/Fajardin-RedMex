@@ -3,11 +3,15 @@ package com.ustadmobile.meshrabiya.testapp.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import com.ustadmobile.meshrabiya.testapp.theme.MeshAmber
+import com.ustadmobile.meshrabiya.testapp.theme.MeshBackground
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -67,7 +71,7 @@ fun NeighborNodeListScreen(
         onClickFilter: (NeighborNodeListUiState.Companion.Filter) -> Unit = {},
         onNodeClick: (String) -> Unit = {},
 ) {
-        LazyColumn {
+        LazyColumn(modifier = Modifier.fillMaxSize().background(MeshBackground)) {
                 item(key = "filterchips") {
                         Row(modifier = Modifier.padding(horizontal = 8.dp)) {
                                 NeighborNodeListUiState.Companion.Filter.values().forEach { filter
@@ -115,16 +119,22 @@ fun NodeListItem(
                     modifier = Modifier
                         .size(10.dp)
                         .clip(CircleShape)
-                        .background(Color.Green)
+                        .background(MeshAmber)
                 )
                 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Text(modifier = Modifier.weight(1f), text = nodeAddr.addressToDotNotation())
+                Text(
+                        modifier = Modifier.weight(1f),
+                        text = nodeAddr.addressToDotNotation(),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        style = MaterialTheme.typography.bodyMedium
+                )
 
                 Text(
-                        text =
-                                "Ping ${nodeEntry.originatorMessage.pingTimeSum}ms\nHops: ${nodeEntry.hopCount}"
+                        text = "Ping ${nodeEntry.originatorMessage.pingTimeSum}ms\nHops: ${nodeEntry.hopCount}",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelMedium
                 )
         }
 }
