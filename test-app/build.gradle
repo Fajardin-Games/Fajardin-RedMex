@@ -78,6 +78,7 @@ android.applicationVariants.all { variant ->
 dependencies {
 
     implementation project(':lib-meshrabiya')
+    implementation project(':lib-pokemon-mesh')
     implementation "ch.acra:acra-http:$version_acra"
     implementation "ch.acra:acra-dialog:$version_acra"
 

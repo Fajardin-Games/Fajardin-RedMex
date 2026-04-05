@@ -7,6 +7,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -52,6 +56,7 @@ fun NeighborNodeListScreen(
                 ),
         onSetAppUiState: (AppUiState) -> Unit,
         onNodeClick: (String) -> Unit,
+        onPokedexClick: (String) -> Unit = {},
 ) {
         val uiState by viewModel.uiState.collectAsState(NeighborNodeListUiState())
 
@@ -61,6 +66,7 @@ fun NeighborNodeListScreen(
                 uiState = uiState,
                 onClickFilter = viewModel::onClickFilterChip,
                 onNodeClick = onNodeClick,
+                onPokedexClick = onPokedexClick,
         )
 }
 
@@ -70,6 +76,7 @@ fun NeighborNodeListScreen(
         uiState: NeighborNodeListUiState,
         onClickFilter: (NeighborNodeListUiState.Companion.Filter) -> Unit = {},
         onNodeClick: (String) -> Unit = {},
+        onPokedexClick: (String) -> Unit = {},
 ) {
         LazyColumn(modifier = Modifier.fillMaxSize().background(MeshBackground)) {
                 item(key = "filterchips") {
@@ -87,10 +94,12 @@ fun NeighborNodeListScreen(
                 }
 
                 items(items = uiState.nodes.entries.toList(), key = { it.key }) { nodeEntry ->
+                        val ip = nodeEntry.key.addressToDotNotation()
                         NodeListItem(
                                 nodeAddr = nodeEntry.key,
                                 nodeEntry = nodeEntry.value,
-                                onClick = { onNodeClick(nodeEntry.key.addressToDotNotation()) }
+                                onClick = { onNodeClick(ip) },
+                                onPokedexClick = { onPokedexClick(ip) },
                         )
                 }
         }
@@ -101,6 +110,7 @@ fun NodeListItem(
         nodeAddr: Int,
         nodeEntry: VirtualNode.LastOriginatorMessage,
         onClick: (() -> Unit)? = null,
+        onPokedexClick: (() -> Unit)? = null,
 ) {
         Row(
                 modifier =
@@ -121,7 +131,7 @@ fun NodeListItem(
                         .clip(CircleShape)
                         .background(MeshAmber)
                 )
-                
+
                 Spacer(modifier = Modifier.width(8.dp))
 
                 Text(
@@ -136,5 +146,15 @@ fun NodeListItem(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelMedium
                 )
+
+                if (onPokedexClick != null) {
+                        IconButton(onClick = onPokedexClick) {
+                                Icon(
+                                        imageVector = Icons.Default.Pets,
+                                        contentDescription = "Ver Pokédex",
+                                        tint = MeshAmber,
+                                )
+                        }
+                }
         }
 }

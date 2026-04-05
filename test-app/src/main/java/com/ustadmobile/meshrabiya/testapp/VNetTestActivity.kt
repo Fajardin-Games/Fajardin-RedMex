@@ -8,10 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ConnectWithoutContact
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.PhoneAndroid
-import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -43,16 +42,23 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ustadmobile.meshrabiya.testapp.appstate.AppUiState
+import com.ustadmobile.meshrabiya.pokemon.PokemonRepository
 import com.ustadmobile.meshrabiya.testapp.screens.LocalVirtualNodeScreen
+import com.ustadmobile.meshrabiya.testapp.screens.MyPokedexScreen
+import com.ustadmobile.meshrabiya.testapp.screens.NeighborPokedexScreen
+import com.ustadmobile.meshrabiya.testapp.screens.PendingTradesScreen
 import com.ustadmobile.meshrabiya.testapp.screens.ReceiveScreen
 import com.ustadmobile.meshrabiya.testapp.screens.SelectDestNodeScreen
 import com.ustadmobile.meshrabiya.testapp.screens.SendFileScreen
+import com.ustadmobile.meshrabiya.testapp.screens.StarterPickerScreen
 import com.ustadmobile.meshrabiya.testapp.theme.HttpOverBluetoothTheme
 import java.net.URLEncoder
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.android.closestDI
 import org.kodein.di.compose.withDI
+import org.kodein.di.direct
+import org.kodein.di.instance
 
 class VNetTestActivity : ComponentActivity(), DIAware {
 
@@ -146,42 +152,38 @@ fun MeshrabiyaTestApp(di: DI) =
 
                             NavigationBarItem(
                                     selected = navController.currentDestination?.route == "localvirtualnode",
-                                    label = { Text("Este Nodo") },
+                                    label = { Text("Este Nodo", maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis) },
+                                    alwaysShowLabel = false,
                                     onClick = { navController.navigate("localvirtualnode") },
                                     colors = navItemColors,
-                                    icon = { Icon(imageVector = Icons.Default.PhoneAndroid, contentDescription = null) }
+                                    icon = { Icon(imageVector = Icons.Default.PhoneAndroid, contentDescription = "Este Nodo") }
                             )
 
                             NavigationBarItem(
                                     selected = navController.currentDestination?.route == "recentchats",
-                                    label = { Text("Chats") },
+                                    label = { Text("Chats", maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis) },
+                                    alwaysShowLabel = false,
                                     onClick = { navController.navigate("recentchats") },
                                     colors = navItemColors,
-                                    icon = { Icon(imageVector = Icons.Default.ConnectWithoutContact, contentDescription = null) }
+                                    icon = { Icon(imageVector = Icons.Default.ConnectWithoutContact, contentDescription = "Chats") }
                             )
 
                             NavigationBarItem(
                                     selected = navController.currentDestination?.route == "neighbornodes",
-                                    label = { Text("Vecinos") },
+                                    label = { Text("Vecinos", maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis) },
+                                    alwaysShowLabel = false,
                                     onClick = { navController.navigate("neighbornodes") },
                                     colors = navItemColors,
-                                    icon = { Icon(imageVector = Icons.Default.People, contentDescription = null) }
+                                    icon = { Icon(imageVector = Icons.Default.People, contentDescription = "Vecinos") }
                             )
 
                             NavigationBarItem(
-                                    selected = selectedItem == "send",
-                                    label = { Text("Enviar") },
-                                    onClick = { navController.navigate("send") },
+                                    selected = navController.currentDestination?.route == "mypokedex",
+                                    label = { Text("Pokédex", maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis) },
+                                    alwaysShowLabel = false,
+                                    onClick = { navController.navigate("mypokedex") },
                                     colors = navItemColors,
-                                    icon = { Icon(imageVector = Icons.Default.UploadFile, contentDescription = null) }
-                            )
-
-                            NavigationBarItem(
-                                    selected = selectedItem == "receive",
-                                    label = { Text("Recibir") },
-                                    onClick = { navController.navigate("receive") },
-                                    colors = navItemColors,
-                                    icon = { Icon(imageVector = Icons.Default.Download, contentDescription = null) }
+                                    icon = { Icon(imageVector = Icons.Default.Pets, contentDescription = "Pokédex") }
                             )
                         }
                     }
@@ -205,10 +207,16 @@ fun AppNavHost(
         onSetAppUiState: (AppUiState) -> Unit = {},
         snackbarHostState: SnackbarHostState,
 ) {
+    val di = org.kodein.di.compose.localDI()
+    val effectiveStart = remember(startDestination) {
+        val repo = di.direct.instance<PokemonRepository>()
+        if (repo.hasAnyPokemon()) startDestination else "starterpicker"
+    }
+
     NavHost(
             modifier = modifier,
             navController = navController,
-            startDestination = startDestination
+            startDestination = effectiveStart
     ) {
         composable("localvirtualnode") {
             LocalVirtualNodeScreen(
@@ -224,10 +232,41 @@ fun AppNavHost(
             )
         }
 
+        composable("starterpicker") {
+            StarterPickerScreen(
+                onSelected = { entry ->
+                    di.direct.instance<PokemonRepository>().addPokemon(entry)
+                    navController.navigate("localvirtualnode") {
+                        popUpTo("starterpicker") { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable("mypokedex") {
+            MyPokedexScreen(
+                onSetAppUiState = onSetAppUiState,
+                onNavigateToTrades = { navController.navigate("pendingtrades") },
+            )
+        }
+
+        composable("neighborpokedex/{ip}") { backStackEntry ->
+            val ip = backStackEntry.arguments?.getString("ip") ?: return@composable
+            NeighborPokedexScreen(
+                targetIp = ip,
+                onSetAppUiState = onSetAppUiState,
+            )
+        }
+
+        composable("pendingtrades") {
+            PendingTradesScreen(onSetAppUiState = onSetAppUiState)
+        }
+
         composable("neighbornodes") {
             com.ustadmobile.meshrabiya.testapp.screens.NeighborNodeListScreen(
                     onSetAppUiState = onSetAppUiState,
-                    onNodeClick = { ipAddress -> navController.navigate("chat/$ipAddress") }
+                    onNodeClick = { ipAddress -> navController.navigate("chat/$ipAddress") },
+                    onPokedexClick = { ipAddress -> navController.navigate("neighborpokedex/$ipAddress") },
             )
         }
 

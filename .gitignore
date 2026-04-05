@@ -15,3 +15,48 @@
 local.properties
 buildconfig.local.properties
 
+# Archivos de compilación de Android
+*.apk
+*.aar
+*.ap_
+*.aab
+
+# Archivos de la máquina virtual (Dalvik/ART)
+*.dex
+
+# Archivos de clases Java/Kotlin
+*.class
+
+# Archivos y carpetas generadas
+bin/
+gen/
+out/
+*.bin
+results.bin
+
+# Archivos y carpetas de Gradle (¡MUY IMPORTANTE!)
+.gradle/
+build/
+*/build/
+*/*/build/
+
+# Archivos de configuración local (rutas del SDK, etc.)
+local.properties
+
+# Archivos de Log
+*.log
+!app_changes.log
+
+# Archivos de IntelliJ / Android Studio
+*.iml
+.idea/
+workspace.xml
+tasks.xml
+gradle.xml
+dictionaries
+libraries
+caches
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db

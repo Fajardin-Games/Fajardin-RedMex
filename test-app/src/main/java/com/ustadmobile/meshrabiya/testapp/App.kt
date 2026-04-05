@@ -13,6 +13,9 @@ import com.ustadmobile.meshrabiya.log.MNetLogger
 import com.ustadmobile.meshrabiya.vnet.AndroidVirtualNode
 import com.ustadmobile.meshrabiya.vnet.randomApipaAddr
 import com.ustadmobile.meshrabiya.testapp.server.TestAppServer
+import com.ustadmobile.meshrabiya.pokemon.PokemonMeshClient
+import com.ustadmobile.meshrabiya.pokemon.PokemonMeshServer
+import com.ustadmobile.meshrabiya.pokemon.PokemonRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
@@ -140,8 +143,42 @@ class App: Application(), DIAware {
             )
         }
 
+        bind<File>(tag = TAG_POKEDEX_FILE) with singleton {
+            File(filesDir, "pokedex.json")
+        }
+
+        bind<PokemonRepository>() with singleton {
+            val node: AndroidVirtualNode = instance()
+            PokemonRepository(
+                pokedexFile = instance(tag = TAG_POKEDEX_FILE),
+                json = instance(),
+                localIp = node.address.hostAddress ?: "",
+                logger = instance(),
+            )
+        }
+
+        bind<PokemonMeshClient>() with singleton {
+            PokemonMeshClient(
+                httpClient = instance(),
+                json = instance(),
+                logger = instance(),
+            )
+        }
+
+        bind<PokemonMeshServer>() with singleton {
+            val node: AndroidVirtualNode = instance()
+            PokemonMeshServer(
+                repository = instance(),
+                client = instance(),
+                localVirtualAddr = node.address,
+                json = instance(),
+                logger = instance(),
+            )
+        }
+
         onReady {
             instance<TestAppServer>().start()
+            instance<PokemonMeshServer>().start()
             
             val serviceIntent = android.content.Intent(applicationContext, com.ustadmobile.meshrabiya.testapp.service.MeshService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -188,6 +225,8 @@ class App: Application(), DIAware {
         const val TAG_CHAT_HISTORY_FILE = "chat_history_file"
         
         const val TAG_NICKNAMES_FILE = "nicknames_file"
+
+        const val TAG_POKEDEX_FILE = "pokedex_file"
 
     }
 }

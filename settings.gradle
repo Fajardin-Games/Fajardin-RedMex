@@ -17,5 +17,6 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Meshrabiya"
 include ':lib-meshrabiya'
+include ':lib-pokemon-mesh'
 include ':test-app'
 include ':test-shared'
